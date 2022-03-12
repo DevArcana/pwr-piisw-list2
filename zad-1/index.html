@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Piotr Krzystanek - zad 1</title>
+
+    <style>
+        #circle {
+            border-radius: 100%;
+            background-color: yellow;
+            border: 5px solid blueviolet;
+
+            width: 100px;
+            height: 100px;
+
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+    </style>
+</head>
+
+<body>
+    <input type="range" min="10" max="500" oninput="resize(this.value)" >
+    <div id="circle"></div>
+
+    <script>
+        const circle = document.getElementById("circle");
+
+        function resize(size) {
+            circle.innerHTML = `${size}px`;
+            circle.style.width = circle.innerHTML;
+            circle.style.height = circle.innerHTML;
+        }
+
+        resize(document.getElementsByTagName("input")[0].value);
+    </script>
+</body>
+
+</html>
