@@ -15,15 +15,12 @@
         <div class="row">
             <div class="col-3">
                 <h3>Notes</h3>
-                <ul id="notesList">
-                    <li>Pierwsza notatka</li>
-                    <li>Druga notatka</li>
-                    <li>Trzecia notatka</li>
+                <ul id="notesList" onclick="loadNote(event.target.id)">
                 </ul>
             </div>
             <div class="col-9">
                 <h3>Edit note</h3>
-                <form id="noteEdit" class="needs-validation" novalidate>
+                <form id="noteEdit" class="needs-validation" onsubmit="onSubmit(event)" novalidate>
                     <input type="hidden" id="noteId">
 
                     <div class="mb-3">
@@ -46,6 +43,7 @@
     </div>
 
     <script>
+        /* Application */
         class Note {
             constructor(id, name, content) {
                 this.id = id;
@@ -56,9 +54,46 @@
 
         let notes = {};
 
-        function displayNotes() {
+        function persistNotes() {
+            localStorage.setItem("notes", JSON.stringify(notes));
+        }
+
+        function loadNotes() {
+            notes = JSON.parse(localStorage.getItem("notes")) ?? {};
+        }
+
+        function saveNote(note) {
+            notes[note.id] = note;
+        }
+
+        function getNote(noteId) {
+            return notes[noteId] ?? null;
+        }
+
+
+        let notesLoadedCallback;
+        function onNotesLoaded(callback) {
+            notesLoadedCallback = callback;
+        }
+
+        window.onbeforeunload = function (event) {
+            persistNotes();
+        }
+
+        window.onload = function (event) {
+            loadNotes();
             
-            const notesList = document.getElementById("notesList");
+            if (notesLoadedCallback) {
+                notesLoadedCallback();
+            }
+        }
+
+        /* Presentation */
+
+        const notesList = document.getElementById("notesList");
+        const form = document.getElementById("noteEdit");
+
+        function displayNotes() {
             notesList.innerHTML = "";
 
             for (var key in notes) {
@@ -70,16 +105,22 @@
             }
         }
 
-        function persistNotes() {
-            localStorage.setItem("notes", JSON.stringify(notes));
-        }
+        onNotesLoaded(displayNotes);
 
-        function loadNotes() {
-            notes = JSON.parse(localStorage.getItem("notes")) ?? {};
+        function refreshNote(noteId) {
+            const note = getNote(noteId);
+            let noteElem = document.getElementById(noteId);
+            
+            if (!noteElem) {
+                noteElem = document.createElement("li");
+                noteElem.id = note.id;
+                notesList.appendChild(noteElem);
+            }
+
+            noteElem.innerHTML = note.name;
         }
 
         function loadNote(noteId) {
-            const form = document.getElementById("noteEdit");
             const note = notes[noteId];
 
             const elements = form.elements;
@@ -89,48 +130,33 @@
             elements.noteContent.value = note.content;
         }
 
-        function saveNote(note) {
-            notes[note.id] = note;
-            persistNotes();
-            displayNotes();
+        function onSubmit(event) {
+            event.preventDefault();
+            event.stopPropagation();
+
+            form.classList.add("was-validated");
+
+            if (!form.checkValidity()) {
+                return;
+            }
+
+            const values = event.target.elements;
+
+            var id = values.noteId.value;
+            const name = values.noteName.value;
+            const content = values.noteContent.value;
+
+            form.reset();
+            form.elements.noteId.value = ""; // form reset does not affect hidden fields
+            form.classList.remove("was-validated");
+
+            if (!id) {
+                id = Date.now().toString();
+            }
+
+            saveNote(new Note(id, name, content));
+            refreshNote(id);
         }
-
-        (function () {
-            loadNotes();
-            displayNotes();
-
-            const form = document.getElementById("noteEdit");
-            form.addEventListener("submit", function (event) {
-                event.preventDefault();
-                event.stopPropagation();
-
-                form.classList.add("was-validated");
-
-                if (!form.checkValidity()) {
-                    return;
-                }
-
-                const values = event.target.elements;
-
-                var id = values.noteId.value;
-                const name = values.noteName.value;
-                const content = values.noteContent.value;
-
-                form.reset();
-                form.elements.noteId.value = ""; // form reset does not affect hidden fields
-                form.classList.remove("was-validated");
-
-                if (!id) {
-                    id = Date.now().toString();
-                }
-
-                saveNote(new Note(id, name, content));
-            });
-
-            document.getElementById("notesList").addEventListener("click", function(event) {
-                loadNote(event.target.id);
-            });
-        })();
     </script>
 </body>
 
